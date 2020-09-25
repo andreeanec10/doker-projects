@@ -1,0 +1,10 @@
+- name: See running processes on a docker
+  command: "docker exec {{ wikijs_project_name }}_wikijs_1 ps"
+  register: aux
+
+
+- debug:
+    msg: |
+      ---
+      {{ aux | to_nice_yaml }}
+      ----

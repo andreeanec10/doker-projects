@@ -1,0 +1,64 @@
+#- meta: end_play
+
+- name: Create temporary work directory
+  tempfile:
+    state: directory
+    suffix: docker-compose
+  register: mytemp
+
+- name: Generate docker compose file
+  template:
+    src: 'docker-compose.yaml.j2'
+    dest: "{{ mytemp.path }}/docker-compose.yaml"
+
+- name: Copy Dockerfile to temp
+  copy:
+    src: "{{ ansible_inventory_sources[0] | dirname }}/Dockerfile"
+    dest: "{{ mytemp.path }}"
+
+- name: Deploy wiki.js
+  command: "docker-compose -f {{ mytemp.path }}/docker-compose.yaml -p {{ wikijs_project_name }} {{ item }}"
+  register: my_output
+  loop:
+  #- down
+  #- up -d
+  - ps
+
+- name: See running processes on a docker
+  command: "docker exec {{ wikijs_project_name }}_wikijs_1 ps"
+  register: aux 
+
+- debug:
+    msg: |
+      ---
+      {{ aux.stdout | to_nice_yaml }}
+      ----
+
+- name: Save the info of the running processes in a file
+  copy: 
+    content: " {{ aux.stdout | to_nice_yaml }} "
+    dest: /home/andreea/Desktop/incercare-docker/file-info.txt
+
+- name: Select the pid(s) of a process(more processes) after name (ex sleep)
+  command: "grep \"sleep\" file-info.txt"
+  register: proc
+
+- name: Save the info of the running processes in a file
+  copy: 
+    content: " {{ proc.stdout | to_nice_yaml }} "
+    dest: /home/andreea/Desktop/incercare-docker/info-proc.txt
+#problema
+#cand am un proces este $2
+#cand am mai multe este $1
+- name: Get the list of pids
+  command: "awk '{print $1}' info-proc.txt"
+  register: helper
+
+- debug:
+    msg: |
+      ---
+      {{ helper.stdout | to_nice_yaml }}
+      ----
+
+#- name: Close process (ex sleep)
+#  command: "docker exec {{ wikijs_project_name }}_wikijs_1 kill {{ pid-proc }}"
