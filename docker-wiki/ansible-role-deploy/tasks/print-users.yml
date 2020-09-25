@@ -1,0 +1,2 @@
+- name: Print for start project_name and user_name
+  shell: "echo {{ wikijs_user }}"
